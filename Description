@@ -1,0 +1,58 @@
+
+🌐 GlobalPress CMS - AWS Architecture Deep Dive
+1. 🎯 Introduction
+The GlobalPress CMS architecture is a classic example of a highly available, scalable, and secure 3-tier web application on AWS. It is designed to withstand AZ failures, handle global traffic efficiently, and integrate securely with on-premises infrastructure.
+
+2. 🔧 Detailed Component Breakdown
+🌐 VPC Network Layer:
+VPC Foundation: /16 VPC, logically segmented into public and private subnets across two AZs
+
+Public Subnets: Routes to an Internet Gateway for public internet access
+
+Private Subnets: Outbound traffic through NAT Gateways in public subnets, maintaining privacy while allowing updates and AWS service access
+
+🖥️ Web/Application Tier:
+EC2 Auto Scaling Group (ASG): Enables scaling out during load and scaling in during quiet periods
+
+Application Load Balancer (ALB): Distributes HTTP/HTTPS traffic (Layer 7) with health checks
+
+💾 Data Tier:
+Amazon RDS with Multi-AZ: Primary database with synchronous replication to standby replica
+
+Amazon ElastiCache: Redis/Memcached cluster for caching database queries
+
+🔄 Decoupling & Async Processing (Req #8):
+Amazon SQS Queue: Handles tasks like image processing and email sending
+
+Worker EC2 Instances/Lambda: Process messages from SQS queue at their own pace
+
+⚡ Global Acceleration (Req #6):
+Amazon CloudFront: Caches static assets at Edge Locations worldwide
+
+Origin Setup: ALB or EC2 instances serve as origin for dynamic content
+
+🔒 Security Deep Dive:
+Layered Security Model:
+
+Network ACLs: Stateless subnet-level defense
+
+Security Groups: Stateful instance-level firewalls
+
+IAM Roles: Secure access without stored credentials
+
+AWS Shield Standard: DDoS protection
+
+AWS WAF: Filters malicious web traffic (SQLi, XSS)
+
+🌉 Hybrid Connectivity (Req #11):
+AWS Direct Connect: Dedicated private connection to corporate data center
+
+VPN Backup: Encrypted internet-based backup connection
+
+3. ✅ Why This Design Meets the Requirements
+Requirement	                                                   Solution	                                                           Benefit
+High Availability (Req 10)	             Multi-AZ distribution, ALB health checks	                                    Continuous service during failures
+Scalability & Decoupling (Req 8)	    ASG, SQS queue processing                                                   	Handles traffic spikes, protects database
+Performance (Req 6)	                    CloudFront global CDN                                                           Low latency for worldwide users
+Security (Req 2, 4, 9)	                Layered security model, KMS encryption	                                        Comprehensive protection at all levels
+Operational Excellence              	IAM roles, automated backups	                                                Secure access and data durability
